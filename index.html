@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>پل | مترجم صوتی</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%232447F5'/><circle cx='38' cy='34' r='18' fill='white' opacity='.35'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;--ink:#111114;--muted:#8A8F98;--line:#ECECEF;--soft:#F4F5F7;
+  --a:#111114;--a-ink:#FFFFFF;--b:#2447F5;--danger:#E5372B;
+  --l0:radial-gradient(circle at 34% 28%,#fff 0,#e6ebf8 30%,#bcc6e8 100%);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E0E10;--ink:#F2F2F4;--muted:#8A8F98;--line:#232327;--soft:#18181B;
+    --a:#F2F2F4;--a-ink:#0E0E10;--b:#6F8BFF;--danger:#FF6B5E;
+    --l0:radial-gradient(circle at 34% 28%,#4a5070 0,#2b3047 40%,#1a1d2e 100%);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E0E10;--ink:#F2F2F4;--muted:#8A8F98;--line:#232327;--soft:#18181B;
+  --a:#F2F2F4;--a-ink:#0E0E10;--b:#6F8BFF;--danger:#FF6B5E;
+  --l0:radial-gradient(circle at 34% 28%,#4a5070 0,#2b3047 40%,#1a1d2e 100%);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"Vazirmatn",system-ui,-apple-system,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+button,select{font-family:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--b);outline-offset:3px}
+svg{display:block;width:24px;height:24px}
+
+.app{height:100dvh;display:flex;flex-direction:column;max-width:680px;margin:0 auto;padding-top:env(safe-area-inset-top,0px)}
+
+/* top bar */
+.top{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:10px 14px 0}
+.ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.ib:hover{background:var(--soft);color:var(--ink)}
+.ib svg{width:22px;height:22px}
+.dir{justify-self:center;display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:999px;padding:9px 18px;font-size:15px;font-weight:600}
+.dir svg{width:16px;height:16px;color:var(--muted)}
+.pill{margin:8px 24px 0;font-size:12px;color:var(--muted);text-align:center}
+.pill.err{color:var(--danger)}
+.pill .bar{height:3px;background:var(--line);border-radius:3px;margin:6px auto 0;max-width:260px;overflow:hidden}
+.pill .bar i{display:block;height:100%;width:0;background:var(--b);transition:width .25s}
+.pill button{margin-top:4px;color:var(--ink);text-decoration:underline;font-size:12px}
+
+/* stage + orb */
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 24px}
+.orbwrap{position:relative;width:min(62vw,270px);aspect-ratio:1;cursor:pointer;flex:none;border-radius:50%}
+.orb{position:absolute;inset:0;border-radius:50%;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.035)}}
+.halo{position:absolute;inset:-18%;border-radius:50%;filter:blur(24px);opacity:.5;background:radial-gradient(circle,var(--halo,#9aa8dc),transparent 66%);transform:scale(calc(1 + var(--lvl,0)*.45))}
+.body{position:absolute;inset:0;border-radius:50%;overflow:hidden;transform:scale(calc(1 + var(--lvl,0)*.2));will-change:transform}
+.layer{position:absolute;inset:0;opacity:0;transition:opacity .5s}
+.l0{background:var(--l0)}
+.l1{background:radial-gradient(circle at 34% 28%,#d9e6ff 0,#6f93ff 38%,#2447f5 100%)}
+.l2{background:radial-gradient(circle at 34% 28%,#eef0fa 0,#9aa6d6 45%,#5b6aa8 100%)}
+.l3{background:radial-gradient(circle at 34% 28%,#f0e5ff 0,#a47bff 40%,#5b34e6 100%)}
+.swirl{position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(255,255,255,0),rgba(255,255,255,.55),rgba(255,255,255,0) 45%);opacity:0;transition:opacity .4s}
+.rim{position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 -16px 32px rgba(0,0,0,.12),inset 0 12px 24px rgba(255,255,255,.35)}
+[data-state=idle] .l0,[data-state=paused] .l0{opacity:1}
+[data-state=listening] .l1{opacity:1}
+[data-state=thinking] .l2{opacity:1}
+[data-state=speaking] .l3{opacity:1}
+[data-state=listening]{--halo:#2447f5}
+[data-state=thinking]{--halo:#7f8ccc}
+[data-state=speaking]{--halo:#7a4dff}
+[data-state=thinking] .swirl{opacity:1;animation:spin 1.5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+[data-state=paused] .orbwrap{filter:grayscale(1);opacity:.55}
+
+.status{font-size:15px;color:var(--muted);text-align:center;min-height:26px}
+.caps{width:100%;max-width:520px;min-height:110px;max-height:30vh;overflow-y:auto;text-align:center;scrollbar-width:none}
+.caps::-webkit-scrollbar{display:none}
+.orig{font-size:16px;color:var(--muted);overflow-wrap:anywhere}
+.caps[data-mode=live] .orig{font-size:24px;color:var(--ink);font-weight:500}
+.trans{font-size:26px;font-weight:600;line-height:1.6;margin-top:6px;overflow-wrap:anywhere}
+.hint{font-size:14px;color:var(--muted);line-height:1.9;max-width:28ch;margin:0 auto}
+
+/* controls */
+.ctrls{display:flex;justify-content:center;align-items:center;gap:28px;padding:12px 16px calc(26px + env(safe-area-inset-bottom,0px))}
+.cbtn{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--ink);transition:transform .12s,background .2s}
+.cbtn:active{transform:scale(.93)}
+.cbtn svg{width:28px;height:28px}
+.cbtn.dark{background:var(--a);color:var(--a-ink)}
+.cbtn.muted{background:var(--danger);color:#fff}
+.start{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.start .cbtn{width:76px;height:76px}
+
+.toast{position:fixed;inset-inline:0;bottom:calc(130px + env(safe-area-inset-bottom,0px));margin:auto;width:max-content;max-width:88%;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:14px;font-size:13px;line-height:1.6;text-align:center;opacity:0;transform:translateY(6px);transition:.2s;pointer-events:none;z-index:40}
+.toast.show{opacity:1;transform:none}
+
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet.open{opacity:1;pointer-events:auto}
+.panel{width:100%;max-width:680px;margin:0 auto;background:var(--bg);border-radius:26px 26px 0 0;max-height:82dvh;overflow:auto;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(28px);transition:transform .25s}
+.sheet.open .panel{transform:none}
+.grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+.panel h2{margin:0 0 10px;font-size:17px;font-weight:700}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:15px}
+.row:last-of-type{border-bottom:0}
+.row small{display:block;color:var(--muted);font-size:12px;line-height:1.6}
+.sel{appearance:none;-webkit-appearance:none;background:var(--soft);border:0;border-radius:12px;padding:9px 14px;font-size:15px;font-weight:600;outline:none;text-align:center;min-width:120px}
+.sel option{color:#111;background:#fff}
+.sw{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;transition:background .2s;flex:none;cursor:pointer;margin:0}
+.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:inset-inline-start .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw:checked{background:var(--b)}
+.sw:checked::after{inset-inline-start:21px}
+.btn{background:var(--soft);border-radius:12px;padding:9px 16px;font-size:14px;font-weight:600}
+.item{padding:14px 0;border-bottom:1px solid var(--line)}
+.item .o{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.item .t{font-size:19px;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
+.item .a{display:flex;gap:4px;margin-top:4px;margin-inline-start:-8px}
+.item .a button{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);padding:5px 8px;border-radius:10px}
+.item .a button:hover{background:var(--soft);color:var(--ink)}
+.item .a svg{width:14px;height:14px}
+.none{text-align:center;color:var(--muted);padding:28px 0;font-size:14px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-state="idle">
+  <div class="top">
+    <button class="ib" id="hbtn" aria-label="گفتگوها"></button>
+    <button class="dir" id="dir" aria-label="جابه‌جایی جهت ترجمه"><span id="pf"></span><span id="arr"></span><span id="pt"></span></button>
+    <button class="ib" id="sbtn" aria-label="تنظیمات"></button>
+  </div>
+
+  <div class="pill" id="pill" hidden>
+    <span id="pillText"></span>
+    <div class="bar" id="barWrap"><i id="bar"></i></div>
+    <button id="retry" hidden>تلاش دوباره</button>
+  </div>
+
+  <main class="stage" id="stage">
+    <div class="orbwrap" id="orbwrap" role="button" tabindex="0" aria-label="کنترل میکروفون">
+      <div class="halo" id="halo"></div>
+      <div class="orb">
+        <div class="body" id="obody">
+          <div class="layer l0"></div><div class="layer l1"></div><div class="layer l2"></div><div class="layer l3"></div>
+          <div class="swirl"></div><div class="rim"></div>
+        </div>
+      </div>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="caps" id="caps" data-mode="done">
+      <p class="hint" id="hint">نوبتی حرف بزنید؛ ترجمه خودکار گفته می‌شود و دوباره نوبت گوش دادن است.</p>
+      <div class="orig" id="orig" dir="auto"></div>
+      <div class="trans" id="trans" dir="auto"></div>
+    </div>
+  </main>
+
+  <div class="ctrls">
+    <button class="start" id="startBtn"><span class="cbtn dark" id="startIcon"></span><span>شروع گفتگو</span></button>
+    <button class="cbtn" id="micBtn" aria-label="خاموش یا روشن کردن میکروفون" hidden></button>
+    <button class="cbtn dark" id="endBtn" aria-label="پایان گفتگو" hidden></button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="sheet" id="shSet"><div class="panel">
+  <div class="grab"></div><h2>تنظیمات</h2>
+  <div class="row"><span>زبان اول</span><select class="sel" id="selA"></select></div>
+  <div class="row"><span>زبان دوم</span><select class="sel" id="selB"></select></div>
+  <div class="row"><span>پخش خودکار ترجمه</span><input type="checkbox" class="sw" id="swSpeak"></div>
+  <div class="row"><span>عوض شدن خودکار نوبت<small>بعد از هر ترجمه، زبان گوش دادن عوض می‌شود.</small></span><input type="checkbox" class="sw" id="swAlt"></div>
+  <div class="row"><span>پوسته‌ی تیره و روشن</span><button class="btn" id="theme">تغییر</button></div>
+</div></div>
+
+<div class="sheet" id="shHist"><div class="panel">
+  <div class="grab"></div>
+  <div class="row" style="border:0;padding-top:0"><h2 style="margin:0">گفتگوها</h2><button class="btn" id="hclear">پاک کردن</button></div>
+  <div id="hlist"></div>
+</div></div>
+
+<script type="module">
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2/dist/transformers.min.js";
+
+const $ = id => document.getElementById(id);
+const MT_MODEL = "Xenova/nllb-200-distilled-600M";
+
+const LANGS = [
+  ["fa","فارسی","pes_Arab","fa-IR"],["hy","Հայերեն","hye_Armn","hy-AM"],["en","English","eng_Latn","en-US"],
+  ["ar","العربية","arb_Arab","ar-SA"],["tr","Türkçe","tr_Latn","tr-TR"],["fr","Français","fra_Latn","fr-FR"],
+  ["de","Deutsch","deu_Latn","de-DE"],["es","Español","spa_Latn","es-ES"],["it","Italiano","ita_Latn","it-IT"],
+  ["ru","Русский","rus_Cyrl","ru-RU"],["zh","中文","zho_Hans","zh-CN"],["ja","日本語","jpn_Jpan","ja-JP"],
+  ["ko","한국어","kor_Hang","ko-KR"],["hi","हिन्दी","hin_Deva","hi-IN"],["pt","Português","por_Latn","pt-BR"],
+  ["nl","Nederlands","nld_Latn","nl-NL"],["ur","اردو","urd_Arab","ur-PK"]
+];
+const byCode = Object.fromEntries(LANGS.map(l => [l[0], l]));
+
+const P = {
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
+  micoff:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 11.5 5.3M19 11a7 7 0 0 1-.6 2.8M12 18v4M3 3l18 18"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  sliders:'<path d="M4 6h8M18 6h2M4 12h2M12 12h8M4 18h10M20 18h0"/><circle cx="15" cy="6" r="2.2"/><circle cx="9" cy="12" r="2.2"/><circle cx="17" cy="18" r="2.2"/>',
+  hist:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+  arrow:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'
+};
+const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;
+const icon = (el, k) => { el.innerHTML = svg(k) };
+
+const store = {
+  get(k) { try { return localStorage.getItem(k) } catch { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch {} }
+};
+function toast(t, ms = 2800) {
+  const e = $("toast");
+  e.textContent = t; e.classList.add("show");
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => e.classList.remove("show"), ms);
+}
+
+/* ---------- تنظیمات و وضعیت ---------- */
+const S = { a: store.get("pol_a") || "fa", b: store.get("pol_b") || "hy" };
+let autoSpeak = store.get("pol_speak") !== "0";
+let autoAlt = store.get("pol_alt") !== "0";
+let dir = "A";                    // A: زبان اول → دوم
+let session = false, paused = false, gen = 0;
+let st = "idle";
+let msgs = [];
+try { msgs = JSON.parse(store.get("pol_msgs") || "[]").filter(m => m && m.out) } catch {}
+const pair = () => dir === "A" ? [S.a, S.b] : [S.b, S.a];
+
+icon($("hbtn"), "hist"); icon($("sbtn"), "sliders"); icon($("arr"), "arrow");
+icon($("startIcon"), "mic"); icon($("endBtn"), "x"); icon($("micBtn"), "mic");
+
+const opts = LANGS.map(l => `<option value="${l[0]}">${l[1]}</option>`).join("");
+$("selA").innerHTML = opts; $("selB").innerHTML = opts;
+$("selA").value = S.a; $("selB").value = S.b;
+$("swSpeak").checked = autoSpeak; $("swAlt").checked = autoAlt;
+
+const LABEL = {
+  idle: () => "برای شروع بزن",
+  listening: () => `گوش می‌دهم · ${byCode[pair()[0]][1]}`,
+  thinking: () => mt ? "در حال ترجمه…" : "در حال آماده‌سازی مترجم…",
+  speaking: x => `در حال پخش · ${x}`,
+  paused: () => "میکروفون خاموش است"
+};
+function setState(s, extra) {
+  st = s;
+  $("app").dataset.state = s;
+  $("status").textContent = LABEL[s](extra);
+}
+function refreshPair() {
+  const [f, t] = pair();
+  $("pf").textContent = byCode[f][1]; $("pt").textContent = byCode[t][1];
+  if (st === "listening" || st === "idle" || st === "paused") $("status").textContent = LABEL[st]();
+}
+refreshPair();
+
+function onLang() {
+  S.a = $("selA").value; S.b = $("selB").value;
+  store.set("pol_a", S.a); store.set("pol_b", S.b);
+  refreshPair();
+  if (session && !paused && st === "listening") { stopRec(); listen() }
+}
+$("selA").onchange = $("selB").onchange = onLang;
+$("swSpeak").onchange = e => { autoSpeak = e.target.checked; store.set("pol_speak", autoSpeak ? "1" : "0") };
+$("swAlt").onchange = e => { autoAlt = e.target.checked; store.set("pol_alt", autoAlt ? "1" : "0") };
+
+const root = document.documentElement;
+if (store.get("pol_theme")) root.dataset.theme = store.get("pol_theme");
+$("theme").onclick = () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  store.set("pol_theme", root.dataset.theme);
+};
+
+/* شیت‌ها */
+const openSheet = id => $(id).classList.add("open");
+const closeSheets = () => document.querySelectorAll(".sheet").forEach(s => s.classList.remove("open"));
+document.querySelectorAll(".sheet").forEach(s => s.addEventListener("click", e => { if (e.target === s) closeSheets() }));
+$("sbtn").onclick = () => openSheet("shSet");
+$("hbtn").onclick = () => { renderHist(); openSheet("shHist") };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets() });
+
+/* ---------- کپشن‌ها ---------- */
+const caps = $("caps");
+function showOrig(t, live) { $("hint").hidden = true; $("orig").textContent = t; caps.dataset.mode = live ? "live" : "done" }
+function showTrans(t) { $("trans").textContent = t; caps.scrollTop = caps.scrollHeight }
+function clearCaps() { $("orig").textContent = ""; $("trans").textContent = ""; $("hint").hidden = false; caps.dataset.mode = "done" }
+
+/* ---------- حرکت گوی ---------- */
+const RM = matchMedia("(prefers-reduced-motion:reduce)").matches;
+let lvl = 0, target = 0;
+const pulse = a => { target = Math.max(target, a) };
+(function frame(ms) {
+  if (!RM) {
+    const t = ms / 1000;
+    let base = 0;
+    if (st === "listening") base = .1 + .06 * Math.sin(t * 2.2);
+    else if (st === "speaking") base = .26 + .22 * Math.abs(Math.sin(t * 5.1) * Math.sin(t * 2.3 + 1));
+    else if (st === "thinking") base = .07;
+    target *= .9;
+    lvl += (Math.min(1, base + target) - lvl) * .18;
+    $("obody").style.setProperty("--lvl", lvl.toFixed(3));
+    $("halo").style.setProperty("--lvl", lvl.toFixed(3));
+  }
+  requestAnimationFrame(frame);
+})(0);
+
+/* ---------- خروجی صوتی ---------- */
+const warned = new Set();
+let curFin = null;
+function stopSpeech() { try { speechSynthesis.cancel() } catch {} if (curFin) curFin() }
+function speakAsync(text, code) {
+  return new Promise(resolve => {
+    if (!("speechSynthesis" in window) || !text) return resolve();
+    const bcp = byCode[code][3], p = bcp.slice(0, 2).toLowerCase();
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => v.lang.replace("_", "-").toLowerCase().startsWith(p));
+    if (!v && voices.length) {
+      if (!warned.has(code)) { warned.add(code); toast(`صدای ${byCode[code][1]} روی این گوشی نصب نیست؛ فقط متن نشان داده می‌شود.`, 4500) }
+      return resolve();
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = bcp; if (v) u.voice = v;
+    let done = false, iv;
+    const fin = () => { if (done) return; done = true; clearInterval(iv); curFin = null; resolve() };
+    curFin = fin;
+    u.onend = u.onerror = fin;
+    u.onboundary = () => pulse(.8);
+    const t0 = Date.now();
+    iv = setInterval(() => { if (Date.now() - t0 > 1800 && !speechSynthesis.speaking) fin() }, 300);
+    try { speechSynthesis.cancel(); setState("speaking", byCode[code][1]); speechSynthesis.speak(u) } catch { fin() }
+  });
+}
+
+/* ---------- مدل ترجمه ---------- */
+let mt = null, mtLoading = null;
+function setPill(text, { progress = null, err = false, retry = false } = {}) {
+  $("pill").hidden = !text;
+  $("pill").classList.toggle("err", err);
+  $("pillText").textContent = text || "";
+  $("barWrap").hidden = progress === null;
+  if (progress !== null) $("bar").style.width = progress + "%";
+  $("retry").hidden = !retry;
+}
+async function loadMT() {
+  if (mt) return mt;
+  if (mtLoading) return mtLoading;
+  mtLoading = (async () => {
+    setPill("در حال آماده‌سازی مترجم (بار اول حدود ۶۰۰ مگابایت)…", { progress: 0 });
+    try {
+      mt = await pipeline("translation", MT_MODEL, {
+        dtype: "q8",
+        progress_callback: p => {
+          if (p.status === "progress" && p.total) {
+            const pct = Math.round(p.loaded / p.total * 100);
+            setPill(`در حال دانلود مترجم… ${pct.toLocaleString("fa-IR")}٪`, { progress: pct });
+          }
+        }
+      });
+      setPill("");
+      return mt;
+    } catch (e) {
+      mtLoading = null;
+      setPill("دانلود مترجم انجام نشد. اتصال اینترنت یا VPN را بررسی کن.", { err: true, retry: true });
+      throw e;
+    }
+  })();
+  return mtLoading;
+}
+$("retry").onclick = () => { mtLoading = null; loadMT().catch(() => {}) };
+loadMT().catch(() => {});
+
+/* ---------- گوش دادن ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, noSpeech = 0, startFails = 0;
+const ERR = {
+  "not-allowed": "دسترسی به میکروفون داده نشد.",
+  "service-not-allowed": "دسترسی به تشخیص گفتار داده نشد.",
+  "language-not-supported": "این زبان در تشخیص گفتار پشتیبانی نمی‌شود.",
+  "network": "برای تشخیص گفتار اینترنت لازم است."
+};
+function stopRec() {
+  if (!rec) return;
+  const r = rec; rec = null;
+  r.onresult = r.onerror = r.onend = null;
+  try { r.abort() } catch {}
+}
+function listen() {
+  if (!session || paused) return;
+  const [from] = pair();
+  const r = new SR();
+  rec = r;
+  r.lang = byCode[from][3];
+  r.interimResults = true;
+  r.continuous = false;
+  let heard = "", err = "";
+  r.onresult = e => {
+    if (rec !== r) return;
+    let fin = "", tmp = "";
+    for (let i = 0; i < e.results.length; i++) {
+      const x = e.results[i];
+      if (x.isFinal) fin += x[0].transcript; else tmp += x[0].transcript;
+    }
+    heard = (fin + " " + tmp).trim();
+    showOrig(heard, true); showTrans("");
+    pulse(.5 + Math.random() * .35);
+  };
+  r.onerror = e => { err = e.error };
+  r.onend = () => {
+    if (rec !== r) return;
+    rec = null;
+    if (!session || paused) return;
+    const text = heard.trim();
+    if (text) { noSpeech = 0; handle(text); return }
+    if (ERR[err]) { toast(ERR[err], 4500); pauseMic(); return }
+    if (++noSpeech >= 3) { toast("صدایی شنیده نشد. برای ادامه میکروفون را روشن کن."); pauseMic(); return }
+    setTimeout(() => { if (session && !paused && !rec && st === "listening") listen() }, 250);
+  };
+  try {
+    r.start();
+    startFails = 0;
+    setState("listening");
+    if (!heard) { showOrig("", true); showTrans("") }
+  } catch {
+    rec = null;
+    if (++startFails < 3) setTimeout(listen, 400);
+    else { toast("شروع میکروفون ممکن نشد؛ دوباره امتحان کن."); pauseMic() }
+  }
+}
+
+/* ---------- ترجمه + پخش ---------- */
+async function handle(text) {
+  const g = gen;
+  const side = dir, [from, to] = pair();
+  setState("thinking");
+  showOrig(text, false); showTrans("");
+  const m = { id: Date.now(), side, from, to, src: text, out: "" };
+  if (from === to) { showTrans("هر دو زبان یکی هستند."); return pauseMic() }
+  try {
+    const t = await loadMT();
+    const out = await t(text, { src_lang: byCode[from][2], tgt_lang: byCode[to][2], max_new_tokens: 400 });
+    m.out = ((out[0] && out[0].translation_text) || "").trim();
+  } catch {}
+  if (g !== gen || !session) return;
+  if (!m.out) {
+    showTrans("ترجمه انجام نشد.");
+    if (!paused) { setTimeout(() => { if (g === gen && session && !paused) listen() }, 900) }
+    return;
+  }
+  showTrans(m.out);
+  msgs.push(m); store.set("pol_msgs", JSON.stringify(msgs.slice(-40)));
+  if (paused) { setState("paused"); return }
+  if (autoSpeak) await speakAsync(m.out, to);
+  if (g !== gen || !session || paused) return;
+  if (autoAlt) { dir = dir === "A" ? "B" : "A"; refreshPair() }
+  listen();
+}
+
+/* ---------- کنترل نشست ---------- */
+let wl = null;
+async function requestWake() { try { if (navigator.wakeLock && !wl) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => { wl = null }) } } catch {} }
+function releaseWake() { try { wl && wl.release() } catch {} wl = null }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && session) { requestWake(); if (!rec && st === "listening" && !paused) listen() }
+});
+
+function showControls() {
+  $("startBtn").hidden = session;
+  $("micBtn").hidden = !session;
+  $("endBtn").hidden = !session;
+  const mb = $("micBtn");
+  mb.classList.toggle("muted", paused);
+  icon(mb, paused ? "micoff" : "mic");
+}
+function start() {
+  if (!SR) { toast("تشخیص گفتار در این مرورگر نیست. از Chrome استفاده کن.", 4500); return }
+  gen++; session = true; paused = false; noSpeech = 0;
+  clearCaps(); showControls(); requestWake();
+  listen();
+}
+function end() {
+  gen++; session = false; paused = false;
+  stopRec(); stopSpeech(); releaseWake();
+  setState("idle"); clearCaps(); showControls();
+}
+function pauseMic() {
+  paused = true; stopRec(); stopSpeech();
+  setState("paused"); showControls();
+}
+function resume() {
+  paused = false; noSpeech = 0; showControls();
+  listen();
+}
+function orbTap() {
+  if (!session) return start();
+  if (paused) return resume();
+  if (st === "listening" && rec) return rec.stop();
+  if (st === "speaking") return stopSpeech();
+}
+$("orbwrap").onclick = orbTap;
+$("orbwrap").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); orbTap() } });
+$("startBtn").onclick = start;
+$("endBtn").onclick = end;
+$("micBtn").onclick = () => paused ? resume() : pauseMic();
+$("dir").onclick = () => {
+  dir = dir === "A" ? "B" : "A";
+  refreshPair();
+  if (session && !paused && st === "listening") { stopRec(); listen() }
+};
+
+/* ---------- تاریخچه ---------- */
+function renderHist() {
+  const list = $("hlist");
+  list.innerHTML = "";
+  if (!msgs.length) { list.innerHTML = '<div class="none">هنوز گفتگویی نیست.</div>'; return }
+  msgs.slice().reverse().forEach(m => {
+    const d = document.createElement("div"); d.className = "item";
+    const o = document.createElement("div"); o.className = "o"; o.dir = "auto"; o.textContent = m.src;
+    const t = document.createElement("div"); t.className = "t"; t.dir = "auto"; t.textContent = m.out;
+    const a = document.createElement("div"); a.className = "a";
+    const p = document.createElement("button"); p.innerHTML = svg("play") + "<span>پخش</span>";
+    p.onclick = () => { if (session) return toast("اول گفتگو را تمام کن."); speakAsync(m.out, m.to).then(() => setState("idle")) };
+    const c = document.createElement("button"); c.innerHTML = svg("copy") + "<span>کپی</span>";
+    c.onclick = async () => { try { await navigator.clipboard.writeText(m.out); toast("کپی شد", 1200) } catch { toast("کپی نشد", 1200) } };
+    a.append(p, c); d.append(o, t, a); list.append(d);
+  });
+}
+$("hclear").onclick = () => { msgs = []; store.set("pol_msgs", "[]"); renderHist() };
+
+setState("idle"); showControls();
+if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
+</script>
+</body>
+</html>
